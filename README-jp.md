@@ -9,6 +9,7 @@
 - 静的なリスト値の matrix 軸を直積に展開します。
 - 完全なキー/値一致で静的な `exclude` エントリを適用します。
 - 一致する組み合わせへのマージ、または新しい組み合わせの追加として静的な `include` エントリを適用します。
+- 繰り返し指定できる `--job` オプションで、1 つ以上の完全一致したジョブ名にレポートを絞り込みます。
 - 読みやすいテキスト、または警告付きの決定的な JSON を出力します。
 - 未対応の動的 matrix 値には警告を出し、GitHub には接続しません。
 
@@ -37,6 +38,12 @@ PYTHONPATH=src python -m gha_matrix_scout .github/workflows/ci.yml
 PYTHONPATH=src python -m gha_matrix_scout .github/workflows/ci.yml --json
 ```
 
+完全一致のジョブ名で、選択した matrix ジョブだけをプレビューします。
+
+```bash
+PYTHONPATH=src python -m gha_matrix_scout .github/workflows/ci.yml --job test --job build
+```
+
 ## 例
 
 2 つの OS と 2 つの Python バージョンを持ち、そのうち 1 組を除外する matrix の場合、テキストレポートにはワークフローパス、各 matrix ジョブ、最終的な組み合わせ数、生成された各組み合わせが表示されます。
@@ -58,6 +65,8 @@ Combinations: 3
 - Matrix 軸はリストである必要があります。
 - `exclude` と `include` はマッピングのリストである必要があります。
 - 動的式はスキップされ、警告が出ます。
+- `--job NAME` はワークフローのジョブ名を完全一致で絞り込み、繰り返し指定できます。
+- `--job` フィルターが matrix ジョブに一致しない場合、CLI は非ゼロで終了します。テキストモードではエラーを出力し、JSON モードではその警告を含む有効なレポートを出力します。
 
 ## 開発
 
@@ -78,12 +87,11 @@ ruff format --check .
 
 ## テスト
 
-テストは観測可能な振る舞いに集中しています。matrix 展開、include/exclude 処理、未対応値、テキスト出力、JSON 出力、CLI エラーを扱います。
+テストは観測可能な振る舞いに集中しています。matrix 展開、include/exclude 処理、未対応値、ジョブの絞り込み、テキスト出力、JSON 出力、CLI エラーを扱います。
 
 ## ロードマップ
 
 - 不正なワークフローに対する YAML 診断を増やす。
-- ジョブ名による任意のフィルタリング。
 - レビューコメント向けのより豊富なサマリー形式。
 - matrix 定義に対する追加の静的互換性チェック。
 
