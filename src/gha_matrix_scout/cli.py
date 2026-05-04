@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 
 from gha_matrix_scout.parser import WorkflowReport, analyze_workflow
-from gha_matrix_scout.reporter import to_jsonable, to_text
+from gha_matrix_scout.reporter import to_jsonable, to_summary_text, to_text
 
 
 def _positive_int(value: str) -> int:
@@ -31,6 +31,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("workflow", type=Path, help="Path to a workflow YAML file.")
     parser.add_argument(
         "--json", action="store_true", help="Print machine-readable JSON."
+    )
+    parser.add_argument(
+        "--summary",
+        action="store_true",
+        help="Print concise one-line-per-job text output. Ignored with --json.",
     )
     parser.add_argument(
         "--job",
@@ -96,6 +101,8 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.json:
         print(json.dumps(to_jsonable(report), indent=2, sort_keys=False))
+    elif args.summary:
+        print(to_summary_text(report), end="")
     else:
         print(to_text(report), end="")
     return exit_status

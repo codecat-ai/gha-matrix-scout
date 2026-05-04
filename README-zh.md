@@ -11,7 +11,7 @@
 - 通过合并到匹配组合或添加新组合来应用静态 `include` 条目。
 - 通过可重复使用的 `--job` 选项，将报告过滤到一个或多个精确作业名称。
 - 使用 `--max-combinations N` 设置 CI 防护；当任何已报告的 matrix 作业展开后超过正整数限制时失败。
-- 输出可读文本，或输出带警告的确定性 JSON。
+- 输出可读文本、适合 CI 日志的简洁摘要文本，或输出带警告的确定性 JSON。
 - 对不支持的动态 matrix 值给出警告，且不会连接 GitHub。
 
 ## 安装
@@ -37,6 +37,12 @@ PYTHONPATH=src python -m gha_matrix_scout .github/workflows/ci.yml
 
 ```bash
 PYTHONPATH=src python -m gha_matrix_scout .github/workflows/ci.yml --json
+```
+
+输出适合 CI 日志的每个作业一行摘要：
+
+```bash
+PYTHONPATH=src python -m gha_matrix_scout .github/workflows/ci.yml --summary
 ```
 
 按精确作业名称只预览选定的 matrix 作业：
@@ -65,6 +71,12 @@ Combinations: 3
 3. os=windows-latest, python=3.12
 ```
 
+使用 `--summary` 时，相同的已报告作业会压缩为组合数量：
+
+```text
+test: 3 combinations
+```
+
 ## 配置
 
 不需要网络访问、GitHub 凭据，也不会执行工作流。此工具只支持静态 YAML 值：
@@ -73,8 +85,10 @@ Combinations: 3
 - `exclude` 和 `include` 必须是映射列表。
 - 动态表达式会被跳过，并产生警告。
 - `--job NAME` 会按工作流作业名称进行精确过滤，并且可以重复使用。
+- `--summary` 会按 `<job-name>: <count> combination(s)` 的形式，为每个已报告的 matrix 作业输出一行；当数量正好为 1 时使用 `combination`。
 - `--max-combinations N` 接受正整数。在完成正常分析以及任何 `--job` 过滤后，如果某个已报告的 matrix 作业展开组合数大于 `N`，CLI 会以状态 1 退出。
-- 文本模式仍会先输出正常报告，再输出超限警告。JSON 模式保持有效 JSON，并将超限消息加入顶层 `warnings` 列表。
+- 文本模式和摘要模式都会保持警告可见。JSON 模式保持有效 JSON，并将警告消息加入顶层 `warnings` 列表。
+- 使用 `--json` 时，`--summary` 会被忽略，JSON 结构保持不变。
 - 如果 `--job` 过滤器没有匹配到 matrix 作业，CLI 会以非零状态退出。文本模式输出错误；JSON 模式输出包含该警告的有效报告。
 
 ## 开发
@@ -96,7 +110,7 @@ ruff format --check .
 
 ## 测试
 
-测试关注可观察行为：matrix 展开、include/exclude 处理、不支持的值、作业过滤、最大组合数防护、文本输出、JSON 输出以及 CLI 错误。
+测试关注可观察行为：matrix 展开、include/exclude 处理、不支持的值、作业过滤、最大组合数防护、文本输出、摘要输出、JSON 输出以及 CLI 错误。
 
 ## 路线图
 

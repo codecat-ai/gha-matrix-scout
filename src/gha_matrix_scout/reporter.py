@@ -43,6 +43,30 @@ def to_text(report: WorkflowReport) -> str:
     return "\n".join(lines).rstrip() + "\n"
 
 
+def to_summary_text(report: WorkflowReport) -> str:
+    if report.jobs:
+        lines = [
+            (
+                f"{job.name}: {len(job.combinations)} "
+                f"{_combination_label(job.combinations)}"
+            )
+            for job in report.jobs
+        ]
+    else:
+        lines = ["No jobs with static strategy.matrix mappings found."]
+
+    if report.warnings:
+        lines.append("")
+        lines.append("Warnings:")
+        lines.extend(f"- {warning}" for warning in report.warnings)
+
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def _combination_label(combinations: list[dict[str, Any]]) -> str:
+    return "combination" if len(combinations) == 1 else "combinations"
+
+
 def _format_combination(combination: dict[str, Any]) -> str:
     return ", ".join(
         f"{key}={_format_value(value)}" for key, value in combination.items()
