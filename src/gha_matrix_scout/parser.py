@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Collection
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -22,7 +23,9 @@ class WorkflowReport:
     warnings: list[str]
 
 
-def analyze_workflow(path: str | Path) -> WorkflowReport:
+def analyze_workflow(
+    path: str | Path, job_names: Collection[str] | None = None
+) -> WorkflowReport:
     workflow_path = Path(path)
     if not workflow_path.exists():
         raise FileNotFoundError(f"Workflow file not found: {workflow_path}")
@@ -31,6 +34,7 @@ def analyze_workflow(path: str | Path) -> WorkflowReport:
     jobs_data = data.get("jobs", {})
     reports: list[JobReport] = []
     warnings: list[str] = []
+    selected_jobs = set(job_names) if job_names else None
 
     if not isinstance(jobs_data, dict):
         return WorkflowReport(
@@ -38,6 +42,9 @@ def analyze_workflow(path: str | Path) -> WorkflowReport:
         )
 
     for job_name, job_data in jobs_data.items():
+        if selected_jobs is not None and str(job_name) not in selected_jobs:
+            continue
+
         matrix = _matrix_for_job(job_data)
         if matrix is None:
             continue

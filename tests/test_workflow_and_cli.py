@@ -99,6 +99,62 @@ def test_cli_outputs_json(tmp_path):
     ]
 
 
+def test_cli_filters_to_requested_job(tmp_path):
+    workflow = tmp_path / "workflow.yml"
+    workflow.write_text(WORKFLOW, encoding="utf-8")
+
+    completed = subprocess.run(
+        [sys.executable, "-m", "gha_matrix_scout", str(workflow), "--job", "dynamic"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    assert "Job: dynamic" in completed.stdout
+    assert "Job: test" not in completed.stdout
+    assert "node" in completed.stdout
+
+
+def test_cli_reports_no_matching_jobs_in_text_mode(tmp_path):
+    workflow = tmp_path / "workflow.yml"
+    workflow.write_text(WORKFLOW, encoding="utf-8")
+
+    completed = subprocess.run(
+        [sys.executable, "-m", "gha_matrix_scout", str(workflow), "--job", "release"],
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode == 1
+    assert "No matrix jobs matched --job filter: release" in completed.stderr
+    assert completed.stdout == ""
+
+
+def test_cli_reports_no_matching_jobs_as_json(tmp_path):
+    workflow = tmp_path / "workflow.yml"
+    workflow.write_text(WORKFLOW, encoding="utf-8")
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "gha_matrix_scout",
+            str(workflow),
+            "--job",
+            "release",
+            "--json",
+        ],
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode == 1
+    data = json.loads(completed.stdout)
+    assert data["jobs"] == []
+    assert data["warnings"] == ["No matrix jobs matched --job filter: release"]
+    assert completed.stderr == ""
+
+
 def test_cli_reports_missing_file(tmp_path):
     missing = tmp_path / "missing.yml"
 

@@ -9,6 +9,7 @@
 - 将静态列表形式的 matrix 轴展开为笛卡尔积。
 - 通过精确的键值匹配应用静态 `exclude` 条目。
 - 通过合并到匹配组合或添加新组合来应用静态 `include` 条目。
+- 通过可重复使用的 `--job` 选项，将报告过滤到一个或多个精确作业名称。
 - 输出可读文本，或输出带警告的确定性 JSON。
 - 对不支持的动态 matrix 值给出警告，且不会连接 GitHub。
 
@@ -37,6 +38,12 @@ PYTHONPATH=src python -m gha_matrix_scout .github/workflows/ci.yml
 PYTHONPATH=src python -m gha_matrix_scout .github/workflows/ci.yml --json
 ```
 
+按精确作业名称只预览选定的 matrix 作业：
+
+```bash
+PYTHONPATH=src python -m gha_matrix_scout .github/workflows/ci.yml --job test --job build
+```
+
 ## 示例
 
 如果一个 matrix 包含两个操作系统、两个 Python 版本，并排除了其中一组组合，文本报告会列出工作流路径、每个 matrix 作业、最终组合数量以及每个生成的组合。
@@ -58,6 +65,8 @@ Combinations: 3
 - Matrix 轴必须是列表。
 - `exclude` 和 `include` 必须是映射列表。
 - 动态表达式会被跳过，并产生警告。
+- `--job NAME` 会按工作流作业名称进行精确过滤，并且可以重复使用。
+- 如果 `--job` 过滤器没有匹配到 matrix 作业，CLI 会以非零状态退出。文本模式输出错误；JSON 模式输出包含该警告的有效报告。
 
 ## 开发
 
@@ -78,12 +87,11 @@ ruff format --check .
 
 ## 测试
 
-测试关注可观察行为：matrix 展开、include/exclude 处理、不支持的值、文本输出、JSON 输出以及 CLI 错误。
+测试关注可观察行为：matrix 展开、include/exclude 处理、不支持的值、作业过滤、文本输出、JSON 输出以及 CLI 错误。
 
 ## 路线图
 
 - 为格式错误的工作流提供更多 YAML 诊断。
-- 支持按作业名称过滤。
 - 为评审评论提供更丰富的摘要格式。
 - 增加 matrix 定义的静态兼容性检查。
 
