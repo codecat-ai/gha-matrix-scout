@@ -10,6 +10,7 @@
 - 完全なキー/値一致で静的な `exclude` エントリを適用します。
 - 一致する組み合わせへのマージ、または新しい組み合わせの追加として静的な `include` エントリを適用します。
 - 繰り返し指定できる `--job` オプションで、1 つ以上の完全一致したジョブ名にレポートを絞り込みます。
+- `--max-combinations N` で CI 用のガードレールを設定し、報告対象の matrix ジョブが正の上限を超えて展開された場合に失敗します。
 - 読みやすいテキスト、または警告付きの決定的な JSON を出力します。
 - 未対応の動的 matrix 値には警告を出し、GitHub には接続しません。
 
@@ -44,6 +45,12 @@ PYTHONPATH=src python -m gha_matrix_scout .github/workflows/ci.yml --json
 PYTHONPATH=src python -m gha_matrix_scout .github/workflows/ci.yml --job test --job build
 ```
 
+報告対象の matrix ジョブが指定した上限を超えて展開された場合にコマンドを失敗させます。
+
+```bash
+PYTHONPATH=src python -m gha_matrix_scout .github/workflows/ci.yml --max-combinations 20
+```
+
 ## 例
 
 2 つの OS と 2 つの Python バージョンを持ち、そのうち 1 組を除外する matrix の場合、テキストレポートにはワークフローパス、各 matrix ジョブ、最終的な組み合わせ数、生成された各組み合わせが表示されます。
@@ -66,6 +73,8 @@ Combinations: 3
 - `exclude` と `include` はマッピングのリストである必要があります。
 - 動的式はスキップされ、警告が出ます。
 - `--job NAME` はワークフローのジョブ名を完全一致で絞り込み、繰り返し指定できます。
+- `--max-combinations N` は正の整数を受け取ります。通常の分析と `--job` フィルターの適用後、報告対象の matrix ジョブの展開組み合わせ数が `N` を超えている場合、CLI はステータス 1 で終了します。
+- テキストモードでは通常のレポートを先に出力し、その後に上限超過の警告を出力します。JSON モードでは有効な JSON を保ち、上限超過メッセージをトップレベルの `warnings` リストに追加します。
 - `--job` フィルターが matrix ジョブに一致しない場合、CLI は非ゼロで終了します。テキストモードではエラーを出力し、JSON モードではその警告を含む有効なレポートを出力します。
 
 ## 開発
@@ -87,7 +96,7 @@ ruff format --check .
 
 ## テスト
 
-テストは観測可能な振る舞いに集中しています。matrix 展開、include/exclude 処理、未対応値、ジョブの絞り込み、テキスト出力、JSON 出力、CLI エラーを扱います。
+テストは観測可能な振る舞いに集中しています。matrix 展開、include/exclude 処理、未対応値、ジョブの絞り込み、最大組み合わせ数のガードレール、テキスト出力、JSON 出力、CLI エラーを扱います。
 
 ## ロードマップ
 
