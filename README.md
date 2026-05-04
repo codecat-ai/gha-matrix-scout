@@ -1,0 +1,100 @@
+# gha-matrix-scout
+
+`gha-matrix-scout` previews static GitHub Actions matrix job combinations from a local workflow file. It helps maintainers inspect matrix expansions before pushing workflow changes.
+
+## Features
+
+- Reads one workflow YAML file from a local clone.
+- Finds jobs with `strategy.matrix` mappings.
+- Expands static list-valued matrix axes into cartesian products.
+- Applies static `exclude` entries by exact key/value matches.
+- Applies static `include` entries by merging into matching combinations or adding new combinations.
+- Prints readable text output or deterministic JSON with warnings.
+- Warns about unsupported dynamic matrix values without contacting GitHub.
+
+## Installation
+
+Clone this repository and work from the repository root:
+
+```bash
+git clone https://github.com/codecat-ai/gha-matrix-scout.git
+cd gha-matrix-scout
+```
+
+This project is not published to a package registry. Use it from a local clone.
+
+## Quick Start
+
+Run the CLI module against a workflow file:
+
+```bash
+PYTHONPATH=src python -m gha_matrix_scout .github/workflows/ci.yml
+```
+
+Print JSON for automation:
+
+```bash
+PYTHONPATH=src python -m gha_matrix_scout .github/workflows/ci.yml --json
+```
+
+## Example
+
+For a matrix with two operating systems and two Python versions, plus one excluded pair, the text report lists the workflow path, each matrix job, the final combination count, and each generated combination.
+
+```text
+Workflow: .github/workflows/ci.yml
+
+Job: test
+Combinations: 3
+1. os=ubuntu-latest, python=3.11
+2. os=ubuntu-latest, python=3.12
+3. os=windows-latest, python=3.12
+```
+
+## Configuration
+
+No network access, GitHub credentials, or workflow execution is required. The scout supports static YAML values only:
+
+- Matrix axes must be lists.
+- `exclude` and `include` must be lists of mappings.
+- Dynamic expressions are skipped with warnings.
+
+## Development
+
+The source package lives in `src/gha_matrix_scout/`. Behavior tests live in `tests/`.
+
+Run the behavior suite from the repository root:
+
+```bash
+PYTHONPATH=src python -m pytest -q
+```
+
+Run formatting and lint checks:
+
+```bash
+ruff check .
+ruff format --check .
+```
+
+## Testing
+
+Tests focus on observable behavior: matrix expansion, include/exclude handling, unsupported values, text output, JSON output, and CLI errors.
+
+## Roadmap
+
+- More YAML diagnostics for malformed workflows.
+- Optional filtering by job name.
+- Richer summary formats for review comments.
+- Additional static compatibility checks for matrix definitions.
+
+## Contributing
+
+See `CONTRIBUTING.md`. Keep behavior changes covered by tests and keep the English, Chinese, and Japanese README files synchronized in meaning.
+
+## AI-Assisted Maintenance
+
+AI tools may help draft code, tests, and documentation, but maintainers must review all changes for correctness, originality, licensing, and security before merging.
+
+## License
+
+MIT. See `LICENSE`.
