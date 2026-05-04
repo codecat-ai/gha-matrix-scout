@@ -10,6 +10,7 @@
 - Applies static `exclude` entries by exact key/value matches.
 - Applies static `include` entries by merging into matching combinations or adding new combinations.
 - Filters reports to one or more exact job names with repeatable `--job` options.
+- Fails CI guardrails with `--max-combinations N` when any reported matrix job expands beyond a positive limit.
 - Prints readable text output or deterministic JSON with warnings.
 - Warns about unsupported dynamic matrix values without contacting GitHub.
 
@@ -44,6 +45,12 @@ Preview only selected matrix jobs by exact job name:
 PYTHONPATH=src python -m gha_matrix_scout .github/workflows/ci.yml --job test --job build
 ```
 
+Fail the command when any reported matrix job expands beyond a chosen limit:
+
+```bash
+PYTHONPATH=src python -m gha_matrix_scout .github/workflows/ci.yml --max-combinations 20
+```
+
 ## Example
 
 For a matrix with two operating systems and two Python versions, plus one excluded pair, the text report lists the workflow path, each matrix job, the final combination count, and each generated combination.
@@ -66,6 +73,8 @@ No network access, GitHub credentials, or workflow execution is required. The sc
 - `exclude` and `include` must be lists of mappings.
 - Dynamic expressions are skipped with warnings.
 - `--job NAME` filters by exact workflow job name and may be repeated.
+- `--max-combinations N` accepts a positive integer. After normal analysis and any `--job` filtering, the CLI exits with status 1 if a reported matrix job has more than `N` expanded combinations.
+- Text mode still prints the normal report before the over-limit warnings. JSON mode keeps valid JSON and adds the over-limit messages to the top-level `warnings` list.
 - If a `--job` filter matches no matrix jobs, the CLI exits non-zero. Text mode prints an error; JSON mode prints a valid report with the warning.
 
 ## Development
@@ -87,7 +96,7 @@ ruff format --check .
 
 ## Testing
 
-Tests focus on observable behavior: matrix expansion, include/exclude handling, unsupported values, job filtering, text output, JSON output, and CLI errors.
+Tests focus on observable behavior: matrix expansion, include/exclude handling, unsupported values, job filtering, maximum-combination guardrails, text output, JSON output, and CLI errors.
 
 ## Roadmap
 

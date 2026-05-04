@@ -10,6 +10,7 @@
 - 通过精确的键值匹配应用静态 `exclude` 条目。
 - 通过合并到匹配组合或添加新组合来应用静态 `include` 条目。
 - 通过可重复使用的 `--job` 选项，将报告过滤到一个或多个精确作业名称。
+- 使用 `--max-combinations N` 设置 CI 防护；当任何已报告的 matrix 作业展开后超过正整数限制时失败。
 - 输出可读文本，或输出带警告的确定性 JSON。
 - 对不支持的动态 matrix 值给出警告，且不会连接 GitHub。
 
@@ -44,6 +45,12 @@ PYTHONPATH=src python -m gha_matrix_scout .github/workflows/ci.yml --json
 PYTHONPATH=src python -m gha_matrix_scout .github/workflows/ci.yml --job test --job build
 ```
 
+当任何已报告的 matrix 作业展开后超过指定限制时让命令失败：
+
+```bash
+PYTHONPATH=src python -m gha_matrix_scout .github/workflows/ci.yml --max-combinations 20
+```
+
 ## 示例
 
 如果一个 matrix 包含两个操作系统、两个 Python 版本，并排除了其中一组组合，文本报告会列出工作流路径、每个 matrix 作业、最终组合数量以及每个生成的组合。
@@ -66,6 +73,8 @@ Combinations: 3
 - `exclude` 和 `include` 必须是映射列表。
 - 动态表达式会被跳过，并产生警告。
 - `--job NAME` 会按工作流作业名称进行精确过滤，并且可以重复使用。
+- `--max-combinations N` 接受正整数。在完成正常分析以及任何 `--job` 过滤后，如果某个已报告的 matrix 作业展开组合数大于 `N`，CLI 会以状态 1 退出。
+- 文本模式仍会先输出正常报告，再输出超限警告。JSON 模式保持有效 JSON，并将超限消息加入顶层 `warnings` 列表。
 - 如果 `--job` 过滤器没有匹配到 matrix 作业，CLI 会以非零状态退出。文本模式输出错误；JSON 模式输出包含该警告的有效报告。
 
 ## 开发
@@ -87,7 +96,7 @@ ruff format --check .
 
 ## 测试
 
-测试关注可观察行为：matrix 展开、include/exclude 处理、不支持的值、作业过滤、文本输出、JSON 输出以及 CLI 错误。
+测试关注可观察行为：matrix 展开、include/exclude 处理、不支持的值、作业过滤、最大组合数防护、文本输出、JSON 输出以及 CLI 错误。
 
 ## 路线图
 

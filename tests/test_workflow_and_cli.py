@@ -32,6 +32,24 @@ jobs:
         os: [ubuntu-latest]
 """
 
+LIMIT_WORKFLOW = """
+name: CI
+on: [push]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: ["3.11", "3.12", "3.13"]
+  smoke:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        python: ["3.12"]
+"""
+
 
 def test_analyzes_workflow_jobs_and_warnings(tmp_path):
     workflow = tmp_path / "workflow.yml"
@@ -97,6 +115,133 @@ def test_cli_outputs_json(tmp_path):
     assert data["warnings"] == [
         "Job 'dynamic' matrix axis 'node' is not a static list and was skipped."
     ]
+
+
+def test_cli_max_combinations_reports_text_over_limit_after_normal_report(tmp_path):
+    workflow = tmp_path / "workflow.yml"
+    workflow.write_text(LIMIT_WORKFLOW, encoding="utf-8")
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "gha_matrix_scout",
+            str(workflow),
+            "--max-combinations",
+            "4",
+        ],
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode == 1
+    assert "Job: test" in completed.stdout
+    assert "Combinations: 6" in completed.stdout
+    assert (
+        "Job test has 6 combinations, exceeding --max-combinations 4."
+        in completed.stdout
+    )
+    assert completed.stderr == ""
+
+
+def test_cli_max_combinations_reports_json_over_limit(tmp_path):
+    workflow = tmp_path / "workflow.yml"
+    workflow.write_text(LIMIT_WORKFLOW, encoding="utf-8")
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "gha_matrix_scout",
+            str(workflow),
+            "--max-combinations",
+            "4",
+            "--json",
+        ],
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode == 1
+    data = json.loads(completed.stdout)
+    assert data["jobs"][0]["name"] == "test"
+    assert data["jobs"][0]["combination_count"] == 6
+    assert data["warnings"] == [
+        "Job test has 6 combinations, exceeding --max-combinations 4."
+    ]
+    assert completed.stderr == ""
+
+
+def test_cli_max_combinations_within_limit_keeps_success_behavior(tmp_path):
+    workflow = tmp_path / "workflow.yml"
+    workflow.write_text(LIMIT_WORKFLOW, encoding="utf-8")
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "gha_matrix_scout",
+            str(workflow),
+            "--max-combinations",
+            "6",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    assert "Job: test" in completed.stdout
+    assert "Combinations: 6" in completed.stdout
+    assert "exceeding --max-combinations" not in completed.stdout
+    assert completed.stderr == ""
+
+
+def test_cli_max_combinations_rejects_invalid_values(tmp_path):
+    workflow = tmp_path / "workflow.yml"
+    workflow.write_text(LIMIT_WORKFLOW, encoding="utf-8")
+
+    for value in ["0", "-1", "many"]:
+        completed = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "gha_matrix_scout",
+                str(workflow),
+                "--max-combinations",
+                value,
+            ],
+            capture_output=True,
+            text=True,
+        )
+
+        assert completed.returncode != 0
+        assert "--max-combinations must be a positive integer" in completed.stderr
+
+
+def test_cli_max_combinations_checks_only_selected_jobs(tmp_path):
+    workflow = tmp_path / "workflow.yml"
+    workflow.write_text(LIMIT_WORKFLOW, encoding="utf-8")
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "gha_matrix_scout",
+            str(workflow),
+            "--job",
+            "smoke",
+            "--max-combinations",
+            "1",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    assert "Job: smoke" in completed.stdout
+    assert "Job: test" not in completed.stdout
+    assert "exceeding --max-combinations" not in completed.stdout
+    assert completed.stderr == ""
 
 
 def test_cli_filters_to_requested_job(tmp_path):
