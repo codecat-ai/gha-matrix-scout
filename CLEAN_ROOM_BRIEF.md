@@ -53,7 +53,7 @@ JSON should include `workflow`, `jobs`, and `warnings`.
 - `pyproject.toml` with project metadata, pytest, ruff config, and console script.
 - `src/gha_matrix_scout/` package with parser, matrix expansion, reporter, CLI, and `__main__.py`.
 - `tests/` with behavior tests.
-- `README.md`, `README-zh.md`, `README-jp.md` synchronized in meaning.
+- `README.md`, `README-zh.md`, `README-ja.md` synchronized in meaning.
 - `LICENSE` MIT.
 - `CHANGELOG.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`.
 - `.github/workflows/ci.yml` running pytest and ruff.

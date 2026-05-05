@@ -1,6 +1,6 @@
 # gha-matrix-scout
 
-[English](README.md) | [中文](README-zh.md) | [日本語](README-jp.md)
+[English](README.md) | [中文](README-zh.md) | [日本語](README-ja.md)
 
 
 `gha-matrix-scout` previews static GitHub Actions matrix job combinations from a local workflow file. It helps maintainers inspect matrix expansions before pushing workflow changes.

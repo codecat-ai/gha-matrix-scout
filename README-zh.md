@@ -1,6 +1,6 @@
 # gha-matrix-scout
 
-[English](README.md) | [中文](README-zh.md) | [日本語](README-jp.md)
+[English](README.md) | [中文](README-zh.md) | [日本語](README-ja.md)
 
 
 `gha-matrix-scout` 可以从本地工作流文件预览静态 GitHub Actions matrix 作业组合。它帮助维护者在推送工作流变更前检查 matrix 展开结果。

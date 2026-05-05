@@ -8,7 +8,7 @@ Thank you for improving `gha-matrix-scout`. This project values small, well-test
 - Prefer clear, local code over broad abstractions.
 - Do not execute workflows or contact GitHub from the scout.
 - Keep comments and commit messages in English.
-- Keep `README.md`, `README-zh.md`, and `README-jp.md` synchronized in meaning.
+- Keep `README.md`, `README-zh.md`, and `README-ja.md` synchronized in meaning.
 - Do not copy code or prose from other projects without a clear compatible license and attribution.
 
 ## Local Checks

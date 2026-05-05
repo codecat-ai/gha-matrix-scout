@@ -1,6 +1,6 @@
 # gha-matrix-scout
 
-[English](README.md) | [中文](README-zh.md) | [日本語](README-jp.md)
+[English](README.md) | [中文](README-zh.md) | [日本語](README-ja.md)
 
 
 `gha-matrix-scout` は、ローカルのワークフローファイルから静的な GitHub Actions matrix ジョブの組み合わせをプレビューします。メンテナーがワークフロー変更を push する前に matrix の展開結果を確認するためのツールです。
