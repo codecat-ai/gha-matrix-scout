@@ -45,6 +45,16 @@ def main(argv: list[str] | None = None) -> int:
         help="Preview only matrix jobs whose names exactly match NAME. Repeatable.",
     )
     parser.add_argument(
+        "--require-job",
+        action="append",
+        default=[],
+        metavar="NAME",
+        help=(
+            "Exit non-zero unless NAME is reportable as a static matrix job. "
+            "Repeatable."
+        ),
+    )
+    parser.add_argument(
         "--max-combinations",
         type=_positive_int,
         metavar="N",
@@ -56,7 +66,12 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     try:
-        report = analyze_workflow(args.workflow, job_names=args.job)
+        full_report = analyze_workflow(args.workflow)
+        report = (
+            analyze_workflow(args.workflow, job_names=args.job)
+            if args.job
+            else full_report
+        )
     except FileNotFoundError as error:
         print(error, file=sys.stderr)
         return 2
@@ -82,6 +97,16 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     exit_status = 0
+    if args.require_job:
+        requirement_warnings = _require_job_warnings(full_report, args.require_job)
+        if requirement_warnings:
+            exit_status = 1
+            report = WorkflowReport(
+                workflow=report.workflow,
+                jobs=report.jobs,
+                warnings=[*report.warnings, *requirement_warnings],
+            )
+
     if args.max_combinations is not None:
         limit_warnings = [
             (
@@ -106,6 +131,26 @@ def main(argv: list[str] | None = None) -> int:
     else:
         print(to_text(report), end="")
     return exit_status
+
+
+def _require_job_warnings(
+    report: WorkflowReport, required_jobs: list[str]
+) -> list[str]:
+    reportable_jobs = {
+        job.name
+        for job in report.jobs
+        if not _has_job_static_warning(report.warnings, job.name)
+    }
+    return [
+        f"Required matrix job not found: {job_name}"
+        for job_name in required_jobs
+        if job_name not in reportable_jobs
+    ]
+
+
+def _has_job_static_warning(warnings: list[str], job_name: str) -> bool:
+    prefix = f"Job '{job_name}' "
+    return any(warning.startswith(prefix) for warning in warnings)
 
 
 if __name__ == "__main__":

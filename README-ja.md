@@ -13,6 +13,7 @@
 - 完全なキー/値一致で静的な `exclude` エントリを適用します。
 - 一致する組み合わせへのマージ、または新しい組み合わせの追加として静的な `include` エントリを適用します。
 - 繰り返し指定できる `--job` オプションで、1 つ以上の完全一致したジョブ名にレポートを絞り込みます。
+- 繰り返し指定できる `--require-job` オプションで、指定した静的 matrix ジョブの存在を CI ガードレールとして要求します。
 - `--max-combinations N` で CI 用のガードレールを設定し、報告対象の matrix ジョブが正の上限を超えて展開された場合に失敗します。
 - 読みやすいテキスト、CI ログ向けの簡潔なサマリーテキスト、または警告付きの決定的な JSON を出力します。
 - 未対応の動的 matrix 値には警告を出し、GitHub には接続しません。
@@ -54,6 +55,12 @@ PYTHONPATH=src python -m gha_matrix_scout .github/workflows/ci.yml --summary
 PYTHONPATH=src python -m gha_matrix_scout .github/workflows/ci.yml --job test --job build
 ```
 
+指定した静的 matrix ジョブが存在しない場合にコマンドを失敗させます。
+
+```bash
+PYTHONPATH=src python -m gha_matrix_scout .github/workflows/ci.yml --require-job test
+```
+
 報告対象の matrix ジョブが指定した上限を超えて展開された場合にコマンドを失敗させます。
 
 ```bash
@@ -88,11 +95,14 @@ test: 3 combinations
 - `exclude` と `include` はマッピングのリストである必要があります。
 - 動的式はスキップされ、警告が出ます。
 - `--job NAME` はワークフローのジョブ名を完全一致で絞り込み、繰り返し指定できます。
+- `--require-job NAME` は、完全に解析されたワークフロー内に同じ名前で報告可能な静的 matrix ジョブがあるかを確認し、繰り返し指定できます。これ自体は出力を絞り込みません。
+- `--require-job` は `--job` と組み合わせられます。要件は解析済みのすべての matrix ジョブに対して確認され、レポートは引き続き `--job` で絞り込まれます。
 - `--summary` は、報告対象の matrix ジョブごとに `<job-name>: <count> combination(s)` 形式で 1 行を出力します。数がちょうど 1 の場合は `combination` を使います。
 - `--max-combinations N` は正の整数を受け取ります。通常の分析と `--job` フィルターの適用後、報告対象の matrix ジョブの展開組み合わせ数が `N` を超えている場合、CLI はステータス 1 で終了します。
 - テキストモードとサマリーモードでは警告が見える状態に保たれます。JSON モードでは有効な JSON を保ち、警告メッセージをトップレベルの `warnings` リストに追加します。
 - `--json` を使う場合、`--summary` は無視され、JSON の形は変わりません。
 - `--job` フィルターが matrix ジョブに一致しない場合、CLI は非ゼロで終了します。テキストモードではエラーを出力し、JSON モードではその警告を含む有効なレポートを出力します。
+- `--require-job` の名前が存在しない、または静的 matrix ジョブとして報告できない場合、CLI は非ゼロで終了し、`Required matrix job not found: NAME` を警告に追加します。複数の不足名は、指定された順序で 1 件ずつ警告になります。
 
 ## 開発
 
@@ -113,7 +123,7 @@ ruff format --check .
 
 ## テスト
 
-テストは観測可能な振る舞いに集中しています。matrix 展開、include/exclude 処理、未対応値、ジョブの絞り込み、最大組み合わせ数のガードレール、テキスト出力、サマリー出力、JSON 出力、CLI エラーを扱います。
+テストは観測可能な振る舞いに集中しています。matrix 展開、include/exclude 処理、未対応値、ジョブの絞り込み、必須ジョブのガードレール、最大組み合わせ数のガードレール、テキスト出力、サマリー出力、JSON 出力、CLI エラーを扱います。
 
 ## ロードマップ
 
