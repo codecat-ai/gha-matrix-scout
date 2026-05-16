@@ -50,6 +50,29 @@ jobs:
         python: ["3.12"]
 """
 
+REQUIRE_WORKFLOW = """
+name: CI
+on: [push]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+  lint:
+    runs-on: ubuntu-latest
+  dynamic:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: ${{ fromJSON(inputs.node_versions) }}
+"""
+
 SINGLE_AND_EMPTY_WORKFLOW = """
 name: CI
 on: [push]
@@ -378,6 +401,131 @@ def test_cli_max_combinations_checks_only_selected_jobs(tmp_path):
     assert "Job: smoke" in completed.stdout
     assert "Job: test" not in completed.stdout
     assert "exceeding --max-combinations" not in completed.stdout
+    assert completed.stderr == ""
+
+
+def test_cli_require_job_does_not_filter_text_output(tmp_path):
+    workflow = tmp_path / "workflow.yml"
+    workflow.write_text(REQUIRE_WORKFLOW, encoding="utf-8")
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "gha_matrix_scout",
+            str(workflow),
+            "--require-job",
+            "test",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    assert "Job: test" in completed.stdout
+    assert "Job: build" in completed.stdout
+    assert "Required matrix job not found" not in completed.stdout
+    assert completed.stderr == ""
+
+
+def test_cli_require_job_reports_missing_jobs_in_summary_order(tmp_path):
+    workflow = tmp_path / "workflow.yml"
+    workflow.write_text(REQUIRE_WORKFLOW, encoding="utf-8")
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "gha_matrix_scout",
+            str(workflow),
+            "--summary",
+            "--require-job",
+            "lint",
+            "--require-job",
+            "deploy",
+            "--require-job",
+            "dynamic",
+        ],
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode == 1
+    assert completed.stdout.splitlines()[:2] == [
+        "test: 2 combinations",
+        "build: 1 combination",
+    ]
+    assert "- Required matrix job not found: lint" in completed.stdout
+    assert "- Required matrix job not found: deploy" in completed.stdout
+    assert "- Required matrix job not found: dynamic" in completed.stdout
+    required_warnings = [
+        line for line in completed.stdout.splitlines() if "Required matrix job" in line
+    ]
+    assert required_warnings == [
+        "- Required matrix job not found: lint",
+        "- Required matrix job not found: deploy",
+        "- Required matrix job not found: dynamic",
+    ]
+    assert completed.stderr == ""
+
+
+def test_cli_require_job_reports_missing_jobs_as_valid_json(tmp_path):
+    workflow = tmp_path / "workflow.yml"
+    workflow.write_text(REQUIRE_WORKFLOW, encoding="utf-8")
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "gha_matrix_scout",
+            str(workflow),
+            "--require-job",
+            "lint",
+            "--require-job",
+            "missing",
+            "--json",
+        ],
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode == 1
+    data = json.loads(completed.stdout)
+    assert [job["name"] for job in data["jobs"]] == ["test", "build", "dynamic"]
+    assert data["warnings"][-2:] == [
+        "Required matrix job not found: lint",
+        "Required matrix job not found: missing",
+    ]
+    assert completed.stderr == ""
+
+
+def test_cli_require_job_composes_with_job_filter(tmp_path):
+    workflow = tmp_path / "workflow.yml"
+    workflow.write_text(REQUIRE_WORKFLOW, encoding="utf-8")
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "gha_matrix_scout",
+            str(workflow),
+            "--job",
+            "build",
+            "--require-job",
+            "test",
+            "--require-job",
+            "deploy",
+            "--json",
+        ],
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode == 1
+    data = json.loads(completed.stdout)
+    assert [job["name"] for job in data["jobs"]] == ["build"]
+    assert "Required matrix job not found: test" not in data["warnings"]
+    assert data["warnings"][-1] == "Required matrix job not found: deploy"
     assert completed.stderr == ""
 
 

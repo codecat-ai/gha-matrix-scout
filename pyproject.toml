@@ -8,14 +8,13 @@ version = "0.1.0"
 description = "Preview static GitHub Actions matrix combinations from a local workflow file."
 readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "MIT" }
+license = "MIT"
 authors = [{ name = "gha-matrix-scout contributors" }]
 keywords = ["github-actions", "ci", "matrix", "yaml"]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Environment :: Console",
   "Intended Audience :: Developers",
-  "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
@@ -25,7 +24,7 @@ classifiers = [
 dependencies = ["PyYAML>=6.0"]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0", "ruff>=0.5"]
+dev = ["build>=1.2", "pytest>=8.0", "ruff>=0.5"]
 
 [project.scripts]
 gha-matrix-scout = "gha_matrix_scout.cli:main"

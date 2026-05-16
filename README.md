@@ -13,6 +13,7 @@
 - Applies static `exclude` entries by exact key/value matches.
 - Applies static `include` entries by merging into matching combinations or adding new combinations.
 - Filters reports to one or more exact job names with repeatable `--job` options.
+- Requires named static matrix jobs for CI guardrails with repeatable `--require-job` options.
 - Fails CI guardrails with `--max-combinations N` when any reported matrix job expands beyond a positive limit.
 - Prints readable text output, concise summary text for CI logs, or deterministic JSON with warnings.
 - Warns about unsupported dynamic matrix values without contacting GitHub.
@@ -54,6 +55,12 @@ Preview only selected matrix jobs by exact job name:
 PYTHONPATH=src python -m gha_matrix_scout .github/workflows/ci.yml --job test --job build
 ```
 
+Fail the command unless a named static matrix job is present:
+
+```bash
+PYTHONPATH=src python -m gha_matrix_scout .github/workflows/ci.yml --require-job test
+```
+
 Fail the command when any reported matrix job expands beyond a chosen limit:
 
 ```bash
@@ -88,11 +95,14 @@ No network access, GitHub credentials, or workflow execution is required. The sc
 - `exclude` and `include` must be lists of mappings.
 - Dynamic expressions are skipped with warnings.
 - `--job NAME` filters by exact workflow job name and may be repeated.
+- `--require-job NAME` checks the full parsed workflow for a reportable static matrix job with that exact name and may be repeated. It does not filter output by itself.
+- `--require-job` composes with `--job`: requirements are checked against all parsed matrix jobs, while the report remains filtered by `--job`.
 - `--summary` prints one line per reported matrix job as `<job-name>: <count> combination(s)`, using `combination` for exactly one combination.
 - `--max-combinations N` accepts a positive integer. After normal analysis and any `--job` filtering, the CLI exits with status 1 if a reported matrix job has more than `N` expanded combinations.
 - Text and summary modes keep warnings visible. JSON mode keeps valid JSON and adds warning messages to the top-level `warnings` list.
 - When `--json` is used, `--summary` is ignored and the JSON shape is unchanged.
 - If a `--job` filter matches no matrix jobs, the CLI exits non-zero. Text mode prints an error; JSON mode prints a valid report with the warning.
+- If a `--require-job` name is missing or not reportable as a static matrix job, the CLI exits non-zero and adds `Required matrix job not found: NAME` to warnings. Multiple missing names produce one warning each in the provided order.
 
 ## Development
 
@@ -113,7 +123,7 @@ ruff format --check .
 
 ## Testing
 
-Tests focus on observable behavior: matrix expansion, include/exclude handling, unsupported values, job filtering, maximum-combination guardrails, text output, summary output, JSON output, and CLI errors.
+Tests focus on observable behavior: matrix expansion, include/exclude handling, unsupported values, job filtering, required-job guardrails, maximum-combination guardrails, text output, summary output, JSON output, and CLI errors.
 
 ## Roadmap
 

@@ -13,6 +13,7 @@
 - 通过精确的键值匹配应用静态 `exclude` 条目。
 - 通过合并到匹配组合或添加新组合来应用静态 `include` 条目。
 - 通过可重复使用的 `--job` 选项，将报告过滤到一个或多个精确作业名称。
+- 通过可重复使用的 `--require-job` 选项，为 CI 防护要求指定的静态 matrix 作业存在。
 - 使用 `--max-combinations N` 设置 CI 防护；当任何已报告的 matrix 作业展开后超过正整数限制时失败。
 - 输出可读文本、适合 CI 日志的简洁摘要文本，或输出带警告的确定性 JSON。
 - 对不支持的动态 matrix 值给出警告，且不会连接 GitHub。
@@ -54,6 +55,12 @@ PYTHONPATH=src python -m gha_matrix_scout .github/workflows/ci.yml --summary
 PYTHONPATH=src python -m gha_matrix_scout .github/workflows/ci.yml --job test --job build
 ```
 
+除非指定的静态 matrix 作业存在，否则让命令失败：
+
+```bash
+PYTHONPATH=src python -m gha_matrix_scout .github/workflows/ci.yml --require-job test
+```
+
 当任何已报告的 matrix 作业展开后超过指定限制时让命令失败：
 
 ```bash
@@ -88,11 +95,14 @@ test: 3 combinations
 - `exclude` 和 `include` 必须是映射列表。
 - 动态表达式会被跳过，并产生警告。
 - `--job NAME` 会按工作流作业名称进行精确过滤，并且可以重复使用。
+- `--require-job NAME` 会在完整解析后的工作流中检查是否存在同名且可报告的静态 matrix 作业，并且可以重复使用。它本身不会过滤输出。
+- `--require-job` 可与 `--job` 组合使用：要求会针对所有已解析的 matrix 作业检查，而报告仍由 `--job` 过滤。
 - `--summary` 会按 `<job-name>: <count> combination(s)` 的形式，为每个已报告的 matrix 作业输出一行；当数量正好为 1 时使用 `combination`。
 - `--max-combinations N` 接受正整数。在完成正常分析以及任何 `--job` 过滤后，如果某个已报告的 matrix 作业展开组合数大于 `N`，CLI 会以状态 1 退出。
 - 文本模式和摘要模式都会保持警告可见。JSON 模式保持有效 JSON，并将警告消息加入顶层 `warnings` 列表。
 - 使用 `--json` 时，`--summary` 会被忽略，JSON 结构保持不变。
 - 如果 `--job` 过滤器没有匹配到 matrix 作业，CLI 会以非零状态退出。文本模式输出错误；JSON 模式输出包含该警告的有效报告。
+- 如果 `--require-job` 名称缺失，或不能作为静态 matrix 作业报告，CLI 会以非零状态退出，并将 `Required matrix job not found: NAME` 加入警告。多个缺失名称会按提供顺序各产生一条警告。
 
 ## 开发
 
@@ -113,7 +123,7 @@ ruff format --check .
 
 ## 测试
 
-测试关注可观察行为：matrix 展开、include/exclude 处理、不支持的值、作业过滤、最大组合数防护、文本输出、摘要输出、JSON 输出以及 CLI 错误。
+测试关注可观察行为：matrix 展开、include/exclude 处理、不支持的值、作业过滤、必需作业防护、最大组合数防护、文本输出、摘要输出、JSON 输出以及 CLI 错误。
 
 ## 路线图
 
